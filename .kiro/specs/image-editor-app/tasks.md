@@ -62,7 +62,7 @@
   - Write unit tests for ViewModel logic and state transitions
   - _Requirements: 6.1, 6.3, 6.5, 7.3, 8.1_
 
-- [ ] 10. Create gallery screen UI with Compose
+- [x] 10. Create gallery screen UI with Compose
   - Implement GalleryScreen composable with LazyVerticalGrid for image display
   - Add image selection handling and navigation to editor
   - Implement long-press context menu for delete and share options
