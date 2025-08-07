@@ -12,35 +12,35 @@
   - Create error handling sealed classes for different error types
   - _Requirements: 7.3, 8.1, 8.2_
 
-- [ ] 3. Implement Room database layer
+- [x] 3. Implement Room database layer
   - Create SavedImageEntity with proper annotations and converters
   - Implement SavedImageDao with CRUD operations and Flow-based queries
   - Set up AppDatabase class with migration strategies
   - Write unit tests for database operations
   - _Requirements: 5.2, 5.4, 8.4_
 
-- [ ] 4. Create file management system
+- [x] 4. Create file management system
   - Implement FileManager class for handling image storage in app-specific directory
   - Create utility functions for generating unique filenames and managing file paths
   - Implement file cleanup and validation mechanisms
   - Write tests for file operations and error scenarios
   - _Requirements: 5.1, 5.3, 8.3_
 
-- [ ] 5. Implement image processing repository
+- [x] 5. Implement image processing repository
   - Create ImageProcessingRepositoryImpl with crop, resize, and filter operations
   - Implement individual filter classes (Brightness, Contrast, Saturation, etc.)
   - Add memory management and bitmap recycling mechanisms
   - Create unit tests for image processing operations
   - _Requirements: 2.1, 2.4, 3.1, 3.5, 4.1, 4.2, 9.1, 9.2_
 
-- [ ] 6. Implement data repository layer
+- [x] 6. Implement data repository layer
   - Create ImageRepositoryImpl that combines database and file operations
   - Implement proper error handling and data mapping between entities and domain models
   - Add image metadata extraction and storage logic
   - Write integration tests for repository operations
   - _Requirements: 5.2, 6.4, 7.4, 8.1_
 
-- [ ] 7. Create domain use cases
+- [x] 7. Create domain use cases
   - Implement GetSavedImagesUseCase for retrieving gallery images
   - Create SaveImageUseCase for persisting edited images with metadata
   - Implement DeleteImageUseCase for removing images from storage and database
