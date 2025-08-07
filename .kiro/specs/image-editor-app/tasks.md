@@ -55,7 +55,7 @@
   - Set up proper scoping for different components
   - _Requirements: 7.1, 7.2_
 
-- [ ] 9. Implement gallery ViewModel and UI state
+- [x] 9. Implement gallery ViewModel and UI state
   - Create GalleryViewModel with StateFlow for managing gallery state
   - Implement image loading, deletion, and error handling logic
   - Create GalleryUiState data class with proper state management
