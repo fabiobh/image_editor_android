@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">ImageEditor</string>
+    
+    <!-- Gallery Screen -->
+    <string name="gallery_title">Gallery</string>
+    <string name="add_image_description">Add new image to edit</string>
+    <string name="loading_images">Loading images…</string>
+    <string name="empty_gallery_title">No images yet</string>
+    <string name="empty_gallery_message">Start editing your first image by tapping the + button</string>
+    <string name="share">Share</string>
+    <string name="delete">Delete</string>
+    <string name="share_image">Share image</string>
 </resources>
