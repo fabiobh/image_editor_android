@@ -49,7 +49,7 @@
   - Write unit tests for all use cases
   - _Requirements: 1.1, 2.2, 2.3, 3.2, 3.4, 4.3, 5.1, 6.3, 7.4_
 
-- [ ] 8. Set up dependency injection with Hilt
+- [x] 8. Set up dependency injection with Hilt
   - Create Hilt modules for database, repository, and use case dependencies
   - Configure application-level and activity-level dependency injection
   - Set up proper scoping for different components
