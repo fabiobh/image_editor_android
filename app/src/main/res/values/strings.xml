@@ -31,7 +31,6 @@
     <string name="cancel">Cancel</string>
     <string name="apply">Apply</string>
     <string name="crop_tool_description">Drag the corners to adjust the crop area, then tap Apply to crop the image.</string>
-    <string name="resize_tool_description">Enter new dimensions for the image. The resize tool will be implemented in the next task.</string>
     <string name="filter_tool_description">Select a filter to apply to your image. The filter selection and intensity controls will be implemented in the next task.</string>
     <string name="current_size">Current size: %1$d × %2$d</string>
     <string name="crop_area">Crop area: %1$d × %2$d</string>
@@ -44,4 +43,21 @@
     <string name="crop_handle">Crop handle</string>
     <string name="crop_center_handle">Crop center handle</string>
     <string name="drag_to_adjust_crop">Drag to adjust crop area</string>
+    
+    <!-- Resize Tool -->
+    <string name="resize_tool_title">Resize Tool</string>
+    <string name="resize_tool_description">Enter new dimensions for the image.</string>
+    <string name="lock_aspect_ratio">Lock aspect ratio</string>
+    <string name="width_label">Width</string>
+    <string name="height_label">Height</string>
+    <string name="pixels_unit">px</string>
+    <string name="preview_size">Preview: %1$d × %2$d</string>
+    <string name="scale_percentage">Scale: %1$d%%</string>
+    <string name="width_required">Width is required</string>
+    <string name="height_required">Height is required</string>
+    <string name="invalid_number">Invalid number</string>
+    <string name="width_must_be_positive">Width must be positive</string>
+    <string name="height_must_be_positive">Height must be positive</string>
+    <string name="width_too_large">Width too large (max 4096)</string>
+    <string name="height_too_large">Height too large (max 4096)</string>
 </resources>

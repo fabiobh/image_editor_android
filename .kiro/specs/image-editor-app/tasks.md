@@ -94,7 +94,7 @@
   - Write UI tests for crop tool interactions
   - _Requirements: 2.1, 2.2, 2.3, 2.5_
 
-- [ ] 14. Implement resize tool UI and functionality
+- [x] 14. Implement resize tool UI and functionality
   - Create ResizeDialog or ResizePanel with width/height input fields
   - Add aspect ratio lock toggle and dimension validation
   - Implement real-time preview of resize operations

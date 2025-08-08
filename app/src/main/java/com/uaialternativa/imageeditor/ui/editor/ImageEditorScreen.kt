@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -25,11 +27,14 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -38,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SnackbarHost
@@ -54,6 +60,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,13 +68,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntSize
+import kotlin.math.roundToInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -749,62 +760,16 @@ private fun ResizeControlPanel(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Resize Tool",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        if (currentWidth != null && currentHeight != null) {
-            Text(
-                text = "Current size: $currentWidth × $currentHeight",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        
-        Text(
-            text = "Enter new dimensions for the image. The resize tool will be implemented in the next task.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Cancel")
-            }
-            
-            Button(
-                onClick = onApplyResize,
-                enabled = resizeWidth != null && resizeHeight != null,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Apply")
-            }
-        }
-    }
+    ResizePanel(
+        currentWidth = currentWidth,
+        currentHeight = currentHeight,
+        resizeWidth = resizeWidth,
+        resizeHeight = resizeHeight,
+        onDimensionsChanged = onDimensionsChanged,
+        onApplyResize = onApplyResize,
+        onCancel = onCancel,
+        modifier = modifier
+    )
 }
 
 /**
@@ -927,4 +892,280 @@ private fun UnsavedChangesDialog(
         },
         modifier = modifier
     )
+}
+
+/**
+ * Resize panel with width/height input fields and aspect ratio lock
+ */
+@Composable
+internal fun ResizePanel(
+    currentWidth: Int?,
+    currentHeight: Int?,
+    resizeWidth: Int?,
+    resizeHeight: Int?,
+    onDimensionsChanged: (Int, Int) -> Unit,
+    onApplyResize: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var widthText by remember(resizeWidth) { 
+        mutableStateOf(resizeWidth?.toString() ?: currentWidth?.toString() ?: "") 
+    }
+    var heightText by remember(resizeHeight) { 
+        mutableStateOf(resizeHeight?.toString() ?: currentHeight?.toString() ?: "") 
+    }
+    var aspectRatioLocked by remember { mutableStateOf(true) }
+    var widthError by remember { mutableStateOf<String?>(null) }
+    var heightError by remember { mutableStateOf<String?>(null) }
+    
+    val keyboardController = LocalSoftwareKeyboardController.current
+    
+    // Calculate aspect ratio from current dimensions
+    val aspectRatio = remember(currentWidth, currentHeight) {
+        if (currentWidth != null && currentHeight != null && currentHeight != 0) {
+            currentWidth.toFloat() / currentHeight.toFloat()
+        } else null
+    }
+    
+    val context = LocalContext.current
+    
+    // Validation functions
+    fun validateWidth(text: String): String? {
+        return when {
+            text.isBlank() -> context.getString(R.string.width_required)
+            text.toIntOrNull() == null -> context.getString(R.string.invalid_number)
+            text.toInt() <= 0 -> context.getString(R.string.width_must_be_positive)
+            text.toInt() > 4096 -> context.getString(R.string.width_too_large)
+            else -> null
+        }
+    }
+    
+    fun validateHeight(text: String): String? {
+        return when {
+            text.isBlank() -> context.getString(R.string.height_required)
+            text.toIntOrNull() == null -> context.getString(R.string.invalid_number)
+            text.toInt() <= 0 -> context.getString(R.string.height_must_be_positive)
+            text.toInt() > 4096 -> context.getString(R.string.height_too_large)
+            else -> null
+        }
+    }
+    
+    // Update dimensions when text changes
+    fun updateDimensions() {
+        val width = widthText.toIntOrNull()
+        val height = heightText.toIntOrNull()
+        
+        widthError = validateWidth(widthText)
+        heightError = validateHeight(heightText)
+        
+        if (width != null && height != null && widthError == null && heightError == null) {
+            onDimensionsChanged(width, height)
+        }
+    }
+    
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.resize_tool_title),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        if (currentWidth != null && currentHeight != null) {
+            Text(
+                text = stringResource(R.string.current_size, currentWidth, currentHeight),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        Text(
+            text = stringResource(R.string.resize_tool_description),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        // Aspect ratio lock toggle
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Checkbox(
+                checked = aspectRatioLocked,
+                onCheckedChange = { aspectRatioLocked = it }
+            )
+            Icon(
+                imageVector = if (aspectRatioLocked) Icons.Default.Lock else Icons.Outlined.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = if (aspectRatioLocked) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+            Text(
+                text = stringResource(R.string.lock_aspect_ratio),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        
+        // Dimension input fields
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Width input
+            OutlinedTextField(
+                value = widthText,
+                onValueChange = { newValue ->
+                    if (newValue.all { it.isDigit() } || newValue.isEmpty()) {
+                        widthText = newValue
+                        
+                        // Auto-adjust height if aspect ratio is locked
+                        if (aspectRatioLocked && aspectRatio != null && newValue.isNotEmpty()) {
+                            val width = newValue.toIntOrNull()
+                            if (width != null && width > 0) {
+                                val newHeight = (width / aspectRatio).roundToInt()
+                                heightText = newHeight.toString()
+                            }
+                        }
+                        
+                        updateDimensions()
+                    }
+                },
+                label = { Text(stringResource(R.string.width_label)) },
+                suffix = { Text(stringResource(R.string.pixels_unit)) },
+                isError = widthError != null,
+                supportingText = widthError?.let { { Text(it) } },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                singleLine = true,
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics {
+                        contentDescription = "Image width in pixels"
+                    }
+            )
+            
+            // Height input
+            OutlinedTextField(
+                value = heightText,
+                onValueChange = { newValue ->
+                    if (newValue.all { it.isDigit() } || newValue.isEmpty()) {
+                        heightText = newValue
+                        
+                        // Auto-adjust width if aspect ratio is locked
+                        if (aspectRatioLocked && aspectRatio != null && newValue.isNotEmpty()) {
+                            val height = newValue.toIntOrNull()
+                            if (height != null && height > 0) {
+                                val newWidth = (height * aspectRatio).roundToInt()
+                                widthText = newWidth.toString()
+                            }
+                        }
+                        
+                        updateDimensions()
+                    }
+                },
+                label = { Text(stringResource(R.string.height_label)) },
+                suffix = { Text(stringResource(R.string.pixels_unit)) },
+                isError = heightError != null,
+                supportingText = heightError?.let { { Text(it) } },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { keyboardController?.hide() }
+                ),
+                singleLine = true,
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics {
+                        contentDescription = "Image height in pixels"
+                    }
+            )
+        }
+        
+        // Preview information
+        val previewWidth = widthText.toIntOrNull()
+        val previewHeight = heightText.toIntOrNull()
+        if (previewWidth != null && previewHeight != null && 
+            widthError == null && heightError == null &&
+            (previewWidth != currentWidth || previewHeight != currentHeight)) {
+            
+            val scaleFactorWidth = if (currentWidth != null) previewWidth.toFloat() / currentWidth else 1f
+            val scaleFactorHeight = if (currentHeight != null) previewHeight.toFloat() / currentHeight else 1f
+            val scalePercent = ((scaleFactorWidth + scaleFactorHeight) / 2 * 100).roundToInt()
+            
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.preview_size, previewWidth, previewHeight),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = stringResource(R.string.scale_percentage, scalePercent),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        
+        // Action buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedButton(
+                onClick = {
+                    keyboardController?.hide()
+                    onCancel()
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cancel")
+            }
+            
+            Button(
+                onClick = {
+                    keyboardController?.hide()
+                    onApplyResize()
+                },
+                enabled = resizeWidth != null && resizeHeight != null && 
+                         widthError == null && heightError == null &&
+                         (resizeWidth != currentWidth || resizeHeight != currentHeight),
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Apply")
+            }
+        }
+    }
 }
