@@ -20,6 +20,7 @@ data class ImageEditorUiState(
     val resizeHeight: Int? = null,
     val selectedFilter: FilterType? = null,
     val filterIntensity: Float = 1.0f,
+    val appliedFilters: List<AppliedFilter> = emptyList(),
     val appliedOperations: List<ImageOperation> = emptyList(),
     val operationHistory: List<ImageEditorHistoryState> = emptyList(),
     val currentHistoryIndex: Int = -1,
@@ -40,6 +41,16 @@ data class ImageEditorHistoryState(
 )
 
 /**
+ * Represents an applied filter with its settings
+ */
+data class AppliedFilter(
+    val id: String,
+    val filterType: FilterType,
+    val intensity: Float,
+    val appliedAt: Long = System.currentTimeMillis()
+)
+
+/**
  * Represents different types of editing actions that can be performed
  */
 sealed class ImageEditorAction {
@@ -52,6 +63,8 @@ sealed class ImageEditorAction {
     data class SelectFilter(val filterType: FilterType) : ImageEditorAction()
     data class SetFilterIntensity(val intensity: Float) : ImageEditorAction()
     object ApplyFilter : ImageEditorAction()
+    data class RemoveFilter(val filterId: String) : ImageEditorAction()
+    object ClearAllFilters : ImageEditorAction()
     object Undo : ImageEditorAction()
     object Redo : ImageEditorAction()
     object SaveImage : ImageEditorAction()

@@ -31,11 +31,11 @@
     <string name="cancel">Cancel</string>
     <string name="apply">Apply</string>
     <string name="crop_tool_description">Drag the corners to adjust the crop area, then tap Apply to crop the image.</string>
-    <string name="filter_tool_description">Select a filter to apply to your image. The filter selection and intensity controls will be implemented in the next task.</string>
+
     <string name="current_size">Current size: %1$d × %2$d</string>
     <string name="crop_area">Crop area: %1$d × %2$d</string>
     <string name="selected_filter">Selected filter: %1$s</string>
-    <string name="filter_intensity">Intensity: %1$d%%</string>
+
     <string name="saving_image">Saving...</string>
     <string name="image_saved_successfully">Image saved successfully!</string>
     
@@ -60,4 +60,22 @@
     <string name="height_must_be_positive">Height must be positive</string>
     <string name="width_too_large">Width too large (max 4096)</string>
     <string name="height_too_large">Height too large (max 4096)</string>
+    
+    <!-- Filter Tool -->
+    <string name="filter_tool_title">Filter Tool</string>
+    <string name="filter_tool_description">Select a filter to apply to your image and adjust its intensity.</string>
+    <string name="available_filters">Available Filters</string>
+    <string name="applied_filters">Applied Filters (%1$d)</string>
+    <string name="clear_all_filters">Clear All</string>
+    <string name="filter_intensity">Filter Intensity</string>
+    <string name="remove_filter">Remove filter</string>
+    
+    <!-- Filter Names -->
+    <string name="filter_brightness">Brightness</string>
+    <string name="filter_contrast">Contrast</string>
+    <string name="filter_saturation">Saturation</string>
+    <string name="filter_blur">Blur</string>
+    <string name="filter_sharpen">Sharpen</string>
+    <string name="filter_sepia">Sepia</string>
+    <string name="filter_grayscale">Grayscale</string>
 </resources>

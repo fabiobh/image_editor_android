@@ -102,7 +102,7 @@
   - Add proper keyboard handling and input validation
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 15. Implement filter tool UI and functionality
+- [x] 15. Implement filter tool UI and functionality
   - Create FilterPanel with horizontal list of filter previews
   - Implement filter selection with immediate preview application
   - Add intensity slider for adjustable filter strength

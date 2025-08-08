@@ -3,6 +3,8 @@ package com.uaialternativa.imageeditor.ui.editor
 import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -46,6 +50,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -660,6 +665,7 @@ private fun ToolControlPanel(
                 FilterControlPanel(
                     selectedFilter = uiState.selectedFilter,
                     filterIntensity = uiState.filterIntensity,
+                    appliedFilters = uiState.appliedFilters,
                     onFilterSelected = { filter ->
                         onAction(ImageEditorAction.SelectFilter(filter))
                     },
@@ -667,6 +673,8 @@ private fun ToolControlPanel(
                         onAction(ImageEditorAction.SetFilterIntensity(intensity))
                     },
                     onApplyFilter = { onAction(ImageEditorAction.ApplyFilter) },
+                    onRemoveFilter = { filterId -> onAction(ImageEditorAction.RemoveFilter(filterId)) },
+                    onClearAllFilters = { onAction(ImageEditorAction.ClearAllFilters) },
                     onCancel = { onAction(ImageEditorAction.SelectTool(EditingTool.None)) }
                 )
             }
@@ -779,74 +787,27 @@ private fun ResizeControlPanel(
 private fun FilterControlPanel(
     selectedFilter: com.uaialternativa.imageeditor.domain.model.FilterType?,
     filterIntensity: Float,
+    appliedFilters: List<AppliedFilter>,
     onFilterSelected: (com.uaialternativa.imageeditor.domain.model.FilterType) -> Unit,
     onIntensityChanged: (Float) -> Unit,
     onApplyFilter: () -> Unit,
+    onRemoveFilter: (String) -> Unit,
+    onClearAllFilters: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Filter Tool",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        Text(
-            text = "Select a filter to apply to your image. The filter selection and intensity controls will be implemented in the next task.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        if (selectedFilter != null) {
-            Text(
-                text = "Selected filter: ${selectedFilter.name}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            Text(
-                text = "Intensity: ${(filterIntensity * 100).toInt()}%",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Cancel")
-            }
-            
-            Button(
-                onClick = onApplyFilter,
-                enabled = selectedFilter != null,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Apply")
-            }
-        }
-    }
+    FilterPanel(
+        selectedFilter = selectedFilter,
+        filterIntensity = filterIntensity,
+        appliedFilters = appliedFilters,
+        onFilterSelected = onFilterSelected,
+        onIntensityChanged = onIntensityChanged,
+        onApplyFilter = onApplyFilter,
+        onRemoveFilter = onRemoveFilter,
+        onClearAllFilters = onClearAllFilters,
+        onCancel = onCancel,
+        modifier = modifier
+    )
 }
 
 /**
@@ -1167,5 +1128,362 @@ internal fun ResizePanel(
                 Text("Apply")
             }
         }
+    }
+}
+
+/**
+ * Filter panel with horizontal list of filter previews and intensity slider
+ */
+@Composable
+private fun FilterPanel(
+    selectedFilter: com.uaialternativa.imageeditor.domain.model.FilterType?,
+    filterIntensity: Float,
+    appliedFilters: List<AppliedFilter>,
+    onFilterSelected: (com.uaialternativa.imageeditor.domain.model.FilterType) -> Unit,
+    onIntensityChanged: (Float) -> Unit,
+    onApplyFilter: () -> Unit,
+    onRemoveFilter: (String) -> Unit,
+    onClearAllFilters: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.filter_tool_title),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        Text(
+            text = stringResource(R.string.filter_tool_description),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        // Filter selection row
+        Text(
+            text = stringResource(R.string.available_filters),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            items(com.uaialternativa.imageeditor.domain.model.FilterType.values()) { filterType ->
+                FilterPreviewCard(
+                    filterType = filterType,
+                    isSelected = selectedFilter == filterType,
+                    onClick = { onFilterSelected(filterType) }
+                )
+            }
+        }
+        
+        // Applied filters section (show if any filters are applied)
+        if (appliedFilters.isNotEmpty()) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.applied_filters, appliedFilters.size),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (appliedFilters.size > 1) {
+                        TextButton(
+                            onClick = onClearAllFilters
+                        ) {
+                            Text(
+                                text = stringResource(R.string.clear_all_filters),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                }
+                
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(appliedFilters) { appliedFilter ->
+                        AppliedFilterChip(
+                            appliedFilter = appliedFilter,
+                            onRemove = { onRemoveFilter(appliedFilter.id) }
+                        )
+                    }
+                }
+            }
+        }
+        
+        // Intensity slider (only show when a filter is selected)
+        if (selectedFilter != null) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.filter_intensity),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "${(filterIntensity * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                Slider(
+                    value = filterIntensity,
+                    onValueChange = onIntensityChanged,
+                    valueRange = 0f..1f,
+                    steps = 19, // 20 steps total (0%, 5%, 10%, ..., 100%)
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "0%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "100%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        
+        // Action buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cancel")
+            }
+            
+            Button(
+                onClick = onApplyFilter,
+                enabled = selectedFilter != null,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Apply")
+            }
+        }
+    }
+}
+
+/**
+ * Individual filter preview card
+ */
+@Composable
+private fun FilterPreviewCard(
+    filterType: com.uaialternativa.imageeditor.domain.model.FilterType,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val borderColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    }
+    
+    val backgroundColor = if (isSelected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    
+    Card(
+        modifier = modifier
+            .size(width = 80.dp, height = 100.dp)
+            .clickable { onClick() }
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(8.dp)
+            ),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 2.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Filter preview icon/representation
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = getFilterPreviewColor(filterType),
+                        shape = RoundedCornerShape(6.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = getFilterIcon(filterType),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            
+            Text(
+                text = getFilterDisplayName(filterType),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                textAlign = TextAlign.Center,
+                maxLines = 2
+            )
+        }
+    }
+}
+
+/**
+ * Chip showing an applied filter with remove option
+ */
+@Composable
+private fun AppliedFilterChip(
+    appliedFilter: AppliedFilter,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Filter color indicator
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(
+                        color = getFilterPreviewColor(appliedFilter.filterType),
+                        shape = RoundedCornerShape(6.dp)
+                    )
+            )
+            
+            Column {
+                Text(
+                    text = getFilterDisplayName(appliedFilter.filterType),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = "${(appliedFilter.intensity * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+            }
+            
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.size(20.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.remove_filter),
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Get display name for filter type
+ */
+@Composable
+private fun getFilterDisplayName(filterType: com.uaialternativa.imageeditor.domain.model.FilterType): String {
+    return when (filterType) {
+        com.uaialternativa.imageeditor.domain.model.FilterType.BRIGHTNESS -> stringResource(R.string.filter_brightness)
+        com.uaialternativa.imageeditor.domain.model.FilterType.CONTRAST -> stringResource(R.string.filter_contrast)
+        com.uaialternativa.imageeditor.domain.model.FilterType.SATURATION -> stringResource(R.string.filter_saturation)
+        com.uaialternativa.imageeditor.domain.model.FilterType.BLUR -> stringResource(R.string.filter_blur)
+        com.uaialternativa.imageeditor.domain.model.FilterType.SHARPEN -> stringResource(R.string.filter_sharpen)
+        com.uaialternativa.imageeditor.domain.model.FilterType.SEPIA -> stringResource(R.string.filter_sepia)
+        com.uaialternativa.imageeditor.domain.model.FilterType.GRAYSCALE -> stringResource(R.string.filter_grayscale)
+    }
+}
+
+/**
+ * Get preview color for filter type
+ */
+private fun getFilterPreviewColor(filterType: com.uaialternativa.imageeditor.domain.model.FilterType): Color {
+    return when (filterType) {
+        com.uaialternativa.imageeditor.domain.model.FilterType.BRIGHTNESS -> Color(0xFFFFD700)
+        com.uaialternativa.imageeditor.domain.model.FilterType.CONTRAST -> Color(0xFF4A4A4A)
+        com.uaialternativa.imageeditor.domain.model.FilterType.SATURATION -> Color(0xFFFF6B6B)
+        com.uaialternativa.imageeditor.domain.model.FilterType.BLUR -> Color(0xFF87CEEB)
+        com.uaialternativa.imageeditor.domain.model.FilterType.SHARPEN -> Color(0xFF32CD32)
+        com.uaialternativa.imageeditor.domain.model.FilterType.SEPIA -> Color(0xFFA0522D)
+        com.uaialternativa.imageeditor.domain.model.FilterType.GRAYSCALE -> Color(0xFF808080)
+    }
+}
+
+/**
+ * Get icon for filter type
+ */
+private fun getFilterIcon(filterType: com.uaialternativa.imageeditor.domain.model.FilterType): androidx.compose.ui.graphics.vector.ImageVector {
+    return when (filterType) {
+        com.uaialternativa.imageeditor.domain.model.FilterType.BRIGHTNESS -> Icons.Default.Settings
+        com.uaialternativa.imageeditor.domain.model.FilterType.CONTRAST -> Icons.Default.Settings
+        com.uaialternativa.imageeditor.domain.model.FilterType.SATURATION -> Icons.Default.Settings
+        com.uaialternativa.imageeditor.domain.model.FilterType.BLUR -> Icons.Default.Settings
+        com.uaialternativa.imageeditor.domain.model.FilterType.SHARPEN -> Icons.Default.Settings
+        com.uaialternativa.imageeditor.domain.model.FilterType.SEPIA -> Icons.Default.Settings
+        com.uaialternativa.imageeditor.domain.model.FilterType.GRAYSCALE -> Icons.Default.Settings
     }
 }
