@@ -90,6 +90,8 @@ class ImageEditorViewModel @Inject constructor(
             is ImageEditorAction.SelectFilter -> selectFilter(action.filterType)
             is ImageEditorAction.SetFilterIntensity -> setFilterIntensity(action.intensity)
             is ImageEditorAction.ApplyFilter -> applyFilter()
+            is ImageEditorAction.RemoveFilter -> removeFilter(action.filterId)
+            is ImageEditorAction.ClearAllFilters -> clearAllFilters()
             is ImageEditorAction.Undo -> undo()
             is ImageEditorAction.Redo -> redo()
             is ImageEditorAction.SaveImage -> saveImage()
@@ -219,6 +221,14 @@ class ImageEditorViewModel @Inject constructor(
                     val operation = ImageOperation.Filter(filterType, intensity)
                     val newOperations = currentState.appliedOperations + operation
                     
+                    // Create applied filter for stacking
+                    val appliedFilter = AppliedFilter(
+                        id = java.util.UUID.randomUUID().toString(),
+                        filterType = filterType,
+                        intensity = intensity
+                    )
+                    val newAppliedFilters = currentState.appliedFilters + appliedFilter
+                    
                     addToHistory(
                         image = filteredImage,
                         operations = newOperations,
@@ -228,6 +238,7 @@ class ImageEditorViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         editedImage = filteredImage,
                         appliedOperations = newOperations,
+                        appliedFilters = newAppliedFilters,
                         selectedTool = EditingTool.None,
                         selectedFilter = null,
                         isProcessing = false
@@ -239,6 +250,150 @@ class ImageEditorViewModel @Inject constructor(
                         error = "Failed to apply filter: ${error.message}"
                     )
                 }
+        }
+    }
+
+    private fun removeFilter(filterId: String) {
+        val currentState = _uiState.value
+        val filterToRemove = currentState.appliedFilters.find { it.id == filterId } ?: return
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isProcessing = true)
+            
+            // Start with original image and reapply all filters except the one being removed
+            val originalImage = currentState.originalImage ?: return@launch
+            val remainingFilters = currentState.appliedFilters.filter { it.id != filterId }
+            
+            var resultImage = originalImage
+            val newOperations = mutableListOf<ImageOperation>()
+            
+            // Reapply all other operations first (crop, resize)
+            for (operation in currentState.appliedOperations) {
+                when (operation) {
+                    is ImageOperation.Crop -> {
+                        cropImageUseCase(resultImage, operation.bounds)
+                            .onSuccess { croppedImage ->
+                                resultImage = croppedImage
+                                newOperations.add(operation)
+                            }
+                            .onFailure { 
+                                _uiState.value = _uiState.value.copy(
+                                    isProcessing = false,
+                                    error = "Failed to reapply crop when removing filter"
+                                )
+                                return@launch
+                            }
+                    }
+                    is ImageOperation.Resize -> {
+                        resizeImageUseCase(resultImage, operation.width, operation.height)
+                            .onSuccess { resizedImage ->
+                                resultImage = resizedImage
+                                newOperations.add(operation)
+                            }
+                            .onFailure { 
+                                _uiState.value = _uiState.value.copy(
+                                    isProcessing = false,
+                                    error = "Failed to reapply resize when removing filter"
+                                )
+                                return@launch
+                            }
+                    }
+                    is ImageOperation.Filter -> {
+                        // Only reapply filters that are not being removed
+                        if (remainingFilters.any { it.filterType == operation.type && it.intensity == operation.intensity }) {
+                            applyFilterUseCase(resultImage, operation.type, operation.intensity)
+                                .onSuccess { filteredImage ->
+                                    resultImage = filteredImage
+                                    newOperations.add(operation)
+                                }
+                                .onFailure { 
+                                    _uiState.value = _uiState.value.copy(
+                                        isProcessing = false,
+                                        error = "Failed to reapply filter when removing filter"
+                                    )
+                                    return@launch
+                                }
+                        }
+                    }
+                }
+            }
+            
+            addToHistory(
+                image = resultImage,
+                operations = newOperations,
+                description = "${filterToRemove.filterType.name} filter removed"
+            )
+            
+            _uiState.value = _uiState.value.copy(
+                editedImage = resultImage,
+                appliedOperations = newOperations,
+                appliedFilters = remainingFilters,
+                isProcessing = false
+            )
+        }
+    }
+
+    private fun clearAllFilters() {
+        val currentState = _uiState.value
+        if (currentState.appliedFilters.isEmpty()) return
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isProcessing = true)
+            
+            // Start with original image and reapply only non-filter operations
+            val originalImage = currentState.originalImage ?: return@launch
+            var resultImage = originalImage
+            val newOperations = mutableListOf<ImageOperation>()
+            
+            // Reapply only crop and resize operations
+            for (operation in currentState.appliedOperations) {
+                when (operation) {
+                    is ImageOperation.Crop -> {
+                        cropImageUseCase(resultImage, operation.bounds)
+                            .onSuccess { croppedImage ->
+                                resultImage = croppedImage
+                                newOperations.add(operation)
+                            }
+                            .onFailure { 
+                                _uiState.value = _uiState.value.copy(
+                                    isProcessing = false,
+                                    error = "Failed to reapply crop when clearing filters"
+                                )
+                                return@launch
+                            }
+                    }
+                    is ImageOperation.Resize -> {
+                        resizeImageUseCase(resultImage, operation.width, operation.height)
+                            .onSuccess { resizedImage ->
+                                resultImage = resizedImage
+                                newOperations.add(operation)
+                            }
+                            .onFailure { 
+                                _uiState.value = _uiState.value.copy(
+                                    isProcessing = false,
+                                    error = "Failed to reapply resize when clearing filters"
+                                )
+                                return@launch
+                            }
+                    }
+                    is ImageOperation.Filter -> {
+                        // Skip all filter operations
+                    }
+                }
+            }
+            
+            addToHistory(
+                image = resultImage,
+                operations = newOperations,
+                description = "All filters cleared"
+            )
+            
+            _uiState.value = _uiState.value.copy(
+                editedImage = resultImage,
+                appliedOperations = newOperations,
+                appliedFilters = emptyList(),
+                isProcessing = false
+            )
         }
     }
 
@@ -280,9 +435,21 @@ class ImageEditorViewModel @Inject constructor(
             val newIndex = currentIndex - 1
             val historyState = currentState.operationHistory[newIndex]
             
+            // Rebuild applied filters from operations
+            val appliedFilters = historyState.operations
+                .filterIsInstance<ImageOperation.Filter>()
+                .map { filterOp ->
+                    AppliedFilter(
+                        id = java.util.UUID.randomUUID().toString(),
+                        filterType = filterOp.type,
+                        intensity = filterOp.intensity
+                    )
+                }
+            
             _uiState.value = _uiState.value.copy(
                 editedImage = historyState.image,
                 appliedOperations = historyState.operations,
+                appliedFilters = appliedFilters,
                 currentHistoryIndex = newIndex,
                 canUndo = newIndex > 0,
                 canRedo = true,
@@ -302,9 +469,21 @@ class ImageEditorViewModel @Inject constructor(
             val newIndex = currentIndex + 1
             val historyState = currentState.operationHistory[newIndex]
             
+            // Rebuild applied filters from operations
+            val appliedFilters = historyState.operations
+                .filterIsInstance<ImageOperation.Filter>()
+                .map { filterOp ->
+                    AppliedFilter(
+                        id = java.util.UUID.randomUUID().toString(),
+                        filterType = filterOp.type,
+                        intensity = filterOp.intensity
+                    )
+                }
+            
             _uiState.value = _uiState.value.copy(
                 editedImage = historyState.image,
                 appliedOperations = historyState.operations,
+                appliedFilters = appliedFilters,
                 currentHistoryIndex = newIndex,
                 canUndo = true,
                 canRedo = newIndex < historySize - 1,
