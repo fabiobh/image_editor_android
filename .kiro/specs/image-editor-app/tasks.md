@@ -78,7 +78,7 @@
   - Write comprehensive unit tests for ViewModel logic
   - _Requirements: 1.3, 2.2, 2.5, 3.2, 4.3, 4.5, 7.3, 8.1_
 
-- [ ] 12. Create image editor screen UI structure
+- [x] 12. Create image editor screen UI structure
   - Implement ImageEditorScreen composable with main image display area
   - Create toolbar with tool selection buttons (crop, resize, filter, save)
   - Add bottom sheet or panel for tool-specific controls
@@ -86,7 +86,7 @@
   - Add loading indicators and error message displays
   - _Requirements: 1.3, 1.5, 2.1, 3.1, 4.1, 8.1_
 
-- [ ] 13. Implement crop tool UI and functionality
+- [x] 13. Implement crop tool UI and functionality
   - Create CropOverlay composable with draggable handles and crop bounds visualization
   - Implement touch handling for crop area adjustment with real-time preview
   - Add crop confirmation and cancellation actions
