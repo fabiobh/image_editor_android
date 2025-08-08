@@ -75,6 +75,9 @@ fun GalleryScreen(
     onImageSelected: (SavedImage) -> Unit,
     onAddImageClicked: () -> Unit,
     modifier: Modifier = Modifier,
+    isImagePickerLoading: Boolean = false,
+    imagePickerError: String? = null,
+    onImagePickerErrorDismissed: () -> Unit = {},
     viewModel: GalleryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -86,6 +89,14 @@ fun GalleryScreen(
         uiState.error?.let { error ->
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
+        }
+    }
+    
+    // Show image picker error messages in snackbar
+    LaunchedEffect(imagePickerError) {
+        imagePickerError?.let { error ->
+            snackbarHostState.showSnackbar(error)
+            onImagePickerErrorDismissed()
         }
     }
 
@@ -112,10 +123,18 @@ fun GalleryScreen(
                     contentDescription = context.getString(R.string.add_image_description)
                 }
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.add_image_description)
-                )
+                if (isImagePickerLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.add_image_description)
+                    )
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }

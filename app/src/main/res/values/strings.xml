@@ -78,4 +78,22 @@
     <string name="filter_sharpen">Sharpen</string>
     <string name="filter_sepia">Sepia</string>
     <string name="filter_grayscale">Grayscale</string>
+    
+    <!-- Image Picker -->
+    <string name="selecting_image">Selecting image…</string>
+    <string name="processing_selected_image">Processing selected image…</string>
+    <string name="image_picker_error">Image Selection Error</string>
+    <string name="image_too_large">Image file is too large</string>
+    <string name="unsupported_format">Unsupported image format</string>
+    <string name="invalid_image">Invalid image file</string>
+    <string name="permission_denied">Permission denied</string>
+    <string name="image_picker_cancelled">Image selection cancelled</string>
+    
+    <!-- Permissions -->
+    <string name="permission_required_title">Permission Required</string>
+    <string name="permission_required_message">This app needs access to your photos to select images for editing. Please grant the permission to continue.</string>
+    <string name="permission_denied_title">Permission Denied</string>
+    <string name="permission_denied_message">Without photo access permission, you cannot select images to edit. You can grant this permission in the app settings.</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="ok">OK</string>
 </resources>
