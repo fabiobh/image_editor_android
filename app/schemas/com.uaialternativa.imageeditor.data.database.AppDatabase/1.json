@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "e79596f4fc4cda55635a8ce8adcfe0e7",
+    "identityHash": "07a33a153479198d5a9ed3a38258c89c",
     "entities": [
       {
         "tableName": "saved_images",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `fileName` TEXT NOT NULL, `filePath` TEXT NOT NULL, `originalFileName` TEXT, `width` INTEGER NOT NULL, `height` INTEGER NOT NULL, `fileSize` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `modifiedAt` INTEGER NOT NULL, `appliedOperationsJson` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `fileName` TEXT NOT NULL, `filePath` TEXT NOT NULL, `originalFileName` TEXT, `width` INTEGER NOT NULL, `height` INTEGER NOT NULL, `fileSize` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `modifiedAt` INTEGER NOT NULL, `appliedOperations` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -63,8 +63,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "appliedOperationsJson",
-            "columnName": "appliedOperationsJson",
+            "fieldPath": "appliedOperations",
+            "columnName": "appliedOperations",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -82,7 +82,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e79596f4fc4cda55635a8ce8adcfe0e7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '07a33a153479198d5a9ed3a38258c89c')"
     ]
   }
 }

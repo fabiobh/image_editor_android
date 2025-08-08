@@ -1,3 +1,63 @@
 <resources>
     <string name="app_name">ImageEditor</string>
+    
+    <!-- Gallery Screen -->
+    <string name="gallery_title">Gallery</string>
+    <string name="add_image_description">Add new image to edit</string>
+    <string name="loading_images">Loading images…</string>
+    <string name="empty_gallery_title">No images yet</string>
+    <string name="empty_gallery_message">Start editing your first image by tapping the + button</string>
+    <string name="share">Share</string>
+    <string name="delete">Delete</string>
+    <string name="share_image">Share image</string>
+    
+    <!-- Image Editor Screen -->
+    <string name="image_editor_title">Image Editor</string>
+    <string name="navigate_back">Navigate back</string>
+    <string name="undo_action">Undo last action</string>
+    <string name="redo_action">Redo last undone action</string>
+    <string name="crop_tool">Crop tool</string>
+    <string name="resize_tool">Resize tool</string>
+    <string name="filter_tool">Filter tool</string>
+    <string name="save_image">Save image</string>
+    <string name="loading_image">Loading image</string>
+    <string name="processing_image">Processing image</string>
+    <string name="no_image_loaded">No image loaded</string>
+    <string name="select_image_to_edit">Select an image from the gallery to start editing</string>
+    <string name="unsaved_changes_title">Unsaved Changes</string>
+    <string name="unsaved_changes_message">You have unsaved changes. What would you like to do?</string>
+    <string name="save_and_exit">Save &amp; Exit</string>
+    <string name="discard_changes">Discard</string>
+    <string name="cancel">Cancel</string>
+    <string name="apply">Apply</string>
+    <string name="crop_tool_description">Drag the corners to adjust the crop area, then tap Apply to crop the image.</string>
+    <string name="filter_tool_description">Select a filter to apply to your image. The filter selection and intensity controls will be implemented in the next task.</string>
+    <string name="current_size">Current size: %1$d × %2$d</string>
+    <string name="crop_area">Crop area: %1$d × %2$d</string>
+    <string name="selected_filter">Selected filter: %1$s</string>
+    <string name="filter_intensity">Intensity: %1$d%%</string>
+    <string name="saving_image">Saving...</string>
+    <string name="image_saved_successfully">Image saved successfully!</string>
+    
+    <!-- Crop Tool -->
+    <string name="crop_handle">Crop handle</string>
+    <string name="crop_center_handle">Crop center handle</string>
+    <string name="drag_to_adjust_crop">Drag to adjust crop area</string>
+    
+    <!-- Resize Tool -->
+    <string name="resize_tool_title">Resize Tool</string>
+    <string name="resize_tool_description">Enter new dimensions for the image.</string>
+    <string name="lock_aspect_ratio">Lock aspect ratio</string>
+    <string name="width_label">Width</string>
+    <string name="height_label">Height</string>
+    <string name="pixels_unit">px</string>
+    <string name="preview_size">Preview: %1$d × %2$d</string>
+    <string name="scale_percentage">Scale: %1$d%%</string>
+    <string name="width_required">Width is required</string>
+    <string name="height_required">Height is required</string>
+    <string name="invalid_number">Invalid number</string>
+    <string name="width_must_be_positive">Width must be positive</string>
+    <string name="height_must_be_positive">Height must be positive</string>
+    <string name="width_too_large">Width too large (max 4096)</string>
+    <string name="height_too_large">Height too large (max 4096)</string>
 </resources>
