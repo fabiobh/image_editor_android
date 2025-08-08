@@ -90,6 +90,7 @@ dependencies {
     testImplementation(libs.room.testing)
     testImplementation("io.mockk:mockk:1.13.8")
     testImplementation("io.mockk:mockk-android:1.13.8")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.test.core)
