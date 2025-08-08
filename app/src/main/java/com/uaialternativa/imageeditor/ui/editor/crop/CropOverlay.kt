@@ -22,6 +22,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -128,23 +130,45 @@ fun CropOverlay(
                     }
                     .size(handleSizeDp)
                     .pointerInput(Unit) {
-                        detectDragGestures { _, dragAmount ->
-                            val newLeft = screenToImage(
-                                screenLeft + dragAmount.x - offsetX,
-                                imageSize.width,
-                                scaledImageWidth
-                            ).coerceIn(0, cropBounds.right - 50)
-                            
-                            val newTop = screenToImage(
-                                screenTop + dragAmount.y - offsetY,
-                                imageSize.height,
-                                scaledImageHeight
-                            ).coerceIn(0, cropBounds.bottom - 50)
-                            
-                            val newBounds = Rect(newLeft, newTop, cropBounds.right, cropBounds.bottom)
-                            cropBounds = newBounds
-                            onCropBoundsChanged(newBounds)
-                        }
+                        var totalDrag = Offset.Zero
+                        detectDragGestures(
+                            onDragStart = { totalDrag = Offset.Zero },
+                            onDrag = { change, dragAmount ->
+                                totalDrag += dragAmount
+                                
+                                val deltaX = screenToImage(
+                                    totalDrag.x,
+                                    imageSize.width,
+                                    scaledImageWidth
+                                )
+                                val deltaY = screenToImage(
+                                    totalDrag.y,
+                                    imageSize.height,
+                                    scaledImageHeight
+                                )
+                                
+                                val minSize = 100
+                                val newLeft = (cropBounds.left + deltaX)
+                                    .coerceIn(0, cropBounds.right - minSize)
+                                val newTop = (cropBounds.top + deltaY)
+                                    .coerceIn(0, cropBounds.bottom - minSize)
+                                
+                                val newBounds = Rect(
+                                    newLeft,
+                                    newTop,
+                                    cropBounds.right,
+                                    cropBounds.bottom
+                                )
+                                
+                                if (newBounds != cropBounds) {
+                                    cropBounds = newBounds
+                                    onCropBoundsChanged(newBounds)
+                                }
+
+                                // Consume the change to prevent multiple events
+                                change.consume()
+                            }
+                        )
                     }
             )
             
@@ -159,23 +183,45 @@ fun CropOverlay(
                     }
                     .size(handleSizeDp)
                     .pointerInput(Unit) {
-                        detectDragGestures { _, dragAmount ->
-                            val newRight = screenToImage(
-                                screenRight + dragAmount.x - offsetX,
-                                imageSize.width,
-                                scaledImageWidth
-                            ).coerceIn(cropBounds.left + 50, imageSize.width)
-                            
-                            val newTop = screenToImage(
-                                screenTop + dragAmount.y - offsetY,
-                                imageSize.height,
-                                scaledImageHeight
-                            ).coerceIn(0, cropBounds.bottom - 50)
-                            
-                            val newBounds = Rect(cropBounds.left, newTop, newRight, cropBounds.bottom)
-                            cropBounds = newBounds
-                            onCropBoundsChanged(newBounds)
-                        }
+                        var totalDrag = Offset.Zero
+                        detectDragGestures(
+                            onDragStart = { totalDrag = Offset.Zero },
+                            onDrag = { change, dragAmount ->
+                                totalDrag += dragAmount
+                                
+                                val deltaX = screenToImage(
+                                    totalDrag.x,
+                                    imageSize.width,
+                                    scaledImageWidth
+                                )
+                                val deltaY = screenToImage(
+                                    totalDrag.y,
+                                    imageSize.height,
+                                    scaledImageHeight
+                                )
+                                
+                                val minSize = 100
+                                val newRight = (cropBounds.right + deltaX)
+                                    .coerceIn(cropBounds.left + minSize, imageSize.width)
+                                val newTop = (cropBounds.top + deltaY)
+                                    .coerceIn(0, cropBounds.bottom - minSize)
+                                
+                                val newBounds = Rect(
+                                    cropBounds.left,
+                                    newTop,
+                                    newRight,
+                                    cropBounds.bottom
+                                )
+                                
+                                if (newBounds != cropBounds) {
+                                    cropBounds = newBounds
+                                    onCropBoundsChanged(newBounds)
+                                }
+
+                                // Consume the change to prevent multiple events
+                                change.consume()
+                            }
+                        )
                     }
             )
             
@@ -190,23 +236,45 @@ fun CropOverlay(
                     }
                     .size(handleSizeDp)
                     .pointerInput(Unit) {
-                        detectDragGestures { _, dragAmount ->
-                            val newLeft = screenToImage(
-                                screenLeft + dragAmount.x - offsetX,
-                                imageSize.width,
-                                scaledImageWidth
-                            ).coerceIn(0, cropBounds.right - 50)
-                            
-                            val newBottom = screenToImage(
-                                screenBottom + dragAmount.y - offsetY,
-                                imageSize.height,
-                                scaledImageHeight
-                            ).coerceIn(cropBounds.top + 50, imageSize.height)
-                            
-                            val newBounds = Rect(newLeft, cropBounds.top, cropBounds.right, newBottom)
-                            cropBounds = newBounds
-                            onCropBoundsChanged(newBounds)
-                        }
+                        var totalDrag = Offset.Zero
+                        detectDragGestures(
+                            onDragStart = { totalDrag = Offset.Zero },
+                            onDrag = { change, dragAmount ->
+                                totalDrag += dragAmount
+                                
+                                val deltaX = screenToImage(
+                                    totalDrag.x,
+                                    imageSize.width,
+                                    scaledImageWidth
+                                )
+                                val deltaY = screenToImage(
+                                    totalDrag.y,
+                                    imageSize.height,
+                                    scaledImageHeight
+                                )
+                                
+                                val minSize = 100
+                                val newLeft = (cropBounds.left + deltaX)
+                                    .coerceIn(0, cropBounds.right - minSize)
+                                val newBottom = (cropBounds.bottom + deltaY)
+                                    .coerceIn(cropBounds.top + minSize, imageSize.height)
+                                
+                                val newBounds = Rect(
+                                    newLeft,
+                                    cropBounds.top,
+                                    cropBounds.right,
+                                    newBottom
+                                )
+                                
+                                if (newBounds != cropBounds) {
+                                    cropBounds = newBounds
+                                    onCropBoundsChanged(newBounds)
+                                }
+                                
+                                // Consume the change to prevent multiple events
+                                change.consume()
+                            }
+                        )
                     }
             )
             
@@ -221,23 +289,45 @@ fun CropOverlay(
                     }
                     .size(handleSizeDp)
                     .pointerInput(Unit) {
-                        detectDragGestures { _, dragAmount ->
-                            val newRight = screenToImage(
-                                screenRight + dragAmount.x - offsetX,
-                                imageSize.width,
-                                scaledImageWidth
-                            ).coerceIn(cropBounds.left + 50, imageSize.width)
-                            
-                            val newBottom = screenToImage(
-                                screenBottom + dragAmount.y - offsetY,
-                                imageSize.height,
-                                scaledImageHeight
-                            ).coerceIn(cropBounds.top + 50, imageSize.height)
-                            
-                            val newBounds = Rect(cropBounds.left, cropBounds.top, newRight, newBottom)
-                            cropBounds = newBounds
-                            onCropBoundsChanged(newBounds)
-                        }
+                        var totalDrag = Offset.Zero
+                        detectDragGestures(
+                            onDragStart = { totalDrag = Offset.Zero },
+                            onDrag = { change, dragAmount ->
+                                totalDrag += dragAmount
+                                
+                                val deltaX = screenToImage(
+                                    totalDrag.x,
+                                    imageSize.width,
+                                    scaledImageWidth
+                                )
+                                val deltaY = screenToImage(
+                                    totalDrag.y,
+                                    imageSize.height,
+                                    scaledImageHeight
+                                )
+                                
+                                val minSize = 100
+                                val newRight = (cropBounds.right + deltaX)
+                                    .coerceIn(cropBounds.left + minSize, imageSize.width)
+                                val newBottom = (cropBounds.bottom + deltaY)
+                                    .coerceIn(cropBounds.top + minSize, imageSize.height)
+                                
+                                val newBounds = Rect(
+                                    cropBounds.left,
+                                    cropBounds.top,
+                                    newRight,
+                                    newBottom
+                                )
+                                
+                                if (newBounds != cropBounds) {
+                                    cropBounds = newBounds
+                                    onCropBoundsChanged(newBounds)
+                                }
+
+                                // Consume the change to prevent multiple events
+                                change.consume()
+                            }
+                        )
                     }
             )
             
@@ -284,6 +374,7 @@ fun CropOverlay(
                             )
                             cropBounds = newBounds
                             onCropBoundsChanged(newBounds)
+
                         }
                     },
                 isCenter = true
